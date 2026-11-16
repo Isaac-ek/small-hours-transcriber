@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Small Hours — local audio transcriber</title>
+    <meta
+      name="description"
+      content="Turn short recordings into text. A local transcription workspace by Chiemelie Ekezie."
+    />
+    <link rel="stylesheet" href="/style.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <div class="shell">
+      <header>
+        <a class="brand" href="/" aria-label="Small Hours home"
+          ><span class="brand-mark">sh.</span> SMALL HOURS</a
+        ><span class="local"><i></i> ON THIS COMPUTER</span>
+      </header>
+      <main>
+        <section class="intro">
+          <p class="eyebrow">A LITTLE LESS REPLAYING</p>
+          <h1>Good words.<br /><em>Worth keeping.</em></h1>
+          <div class="intro-copy">
+            <p>
+              Turn a voice note, thought, or short conversation into text you
+              can work with.
+            </p>
+            <span>English · Up to 2 minutes · No paid API</span>
+          </div>
+        </section>
+        <section class="workspace">
+          <aside>
+            <form id="upload-form" class="upload">
+              <span class="section-number">01 / ADD A RECORDING</span
+              ><label class="drop-zone" for="audio-file"
+                ><span class="upload-icon">↑</span
+                ><strong>Start with a recording</strong
+                ><span>Choose an audio file</span
+                ><small
+                  >MP3, WAV, M4A, MP4, WebM, OGG, FLAC · 20 MB max</small
+                ></label
+              ><input
+                id="audio-file"
+                name="file"
+                type="file"
+                accept=".mp3,.wav,.m4a,.mp4,.webm,.ogg,.flac"
+                required
+              /><button class="primary" id="upload-button">
+                Transcribe recording <span>↗</span>
+              </button>
+              <p class="hint">
+                First use downloads the small speech model. After that,
+                transcription runs locally.
+              </p>
+            </form>
+            <div class="library-heading">
+              <h2>Your recordings</h2>
+              <span id="job-count">0</span>
+            </div>
+            <div id="jobs" class="jobs">
+              <p class="empty-library">Your recordings will appear here.</p>
+            </div>
+            <p class="storage-note">
+              Audio and transcripts stay in this local app until you delete
+              them. This workspace has no separate user accounts.
+            </p>
+          </aside>
+          <section class="editor" aria-labelledby="editor-title">
+            <div id="empty-editor" class="empty-editor">
+              <div class="wave" aria-hidden="true">
+                <i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+              </div>
+              <p class="eyebrow">ROOM FOR YOUR NEXT THOUGHT</p>
+              <h2 id="editor-title">From spoken to written.</h2>
+              <p>
+                Add a recording to get started.<br />Review the transcript, make
+                it yours, and take it with you.
+              </p>
+            </div>
+            <div id="recording" hidden>
+              <div class="editor-heading">
+                <div>
+                  <p class="eyebrow">02 / REVIEW & REFINE</p>
+                  <h2 id="filename"></h2>
+                  <p id="recording-meta"></p>
+                </div>
+                <button id="delete" class="quiet danger">
+                  Delete recording
+                </button>
+              </div>
+              <audio id="player" controls preload="metadata"></audio>
+              <div id="processing" class="processing" aria-live="polite" hidden>
+                <span class="spinner" aria-hidden="true"></span>
+                <div>
+                  <strong id="phase"></strong>
+                  <p>
+                    One recording at a time, on your computer. You can leave
+                    this page open.
+                  </p>
+                </div>
+              </div>
+              <div id="failed" class="failure" role="alert" hidden>
+                <p id="job-error"></p>
+                <button id="retry" class="secondary">Try again</button>
+              </div>
+              <div id="completed" hidden>
+                <div class="transcript-tools">
+                  <p>
+                    Review the words. Timing stays attached to each segment.
+                  </p>
+                  <button id="save" class="primary">Save changes</button>
+                </div>
+                <div id="segments" class="segments"></div>
+                <div class="downloads">
+                  <span>TAKE IT WITH YOU</span
+                  ><a id="download-txt" class="secondary" download
+                    >Download text ↓</a
+                  ><a id="download-srt" class="secondary" download
+                    >Download subtitles ↓</a
+                  >
+                </div>
+                <p class="hint">
+                  Transcription can make mistakes. Review names, numbers and
+                  wording before sharing.
+                </p>
+              </div>
+            </div>
+          </section>
+        </section>
+        <p id="notice" role="status" class="notice" hidden></p>
+      </main>
+      <footer>
+        <span>SMALL HOURS / A LOCAL EXPERIMENT</span
+        ><span>Built by Chiemelie Ekezie · faster-whisper tiny.en</span>
+      </footer>
+    </div>
+  </body>
+</html>
