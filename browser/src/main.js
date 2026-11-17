@@ -4,8 +4,11 @@ import { readSegments, subtitles, timestamp } from "./transcript.js";
 const $ = (id) => document.getElementById(id);
 const input = $("audio-file");
 const player = $("player");
-const MAX_BYTES = 20 * 1024 * 1024;
-const MAX_SECONDS = 120;
+const MAX_BYTES = 50 * 1024 * 1024;
+const MAX_SECONDS = 600;
+const LENGTH_ERROR = "Choose a recording between 1 second and 10 minutes.";
+const progress = $("progress");
+let activeJob;
 let recordingUrl,
   worker,
   segments = [],
@@ -15,6 +18,7 @@ let recordingUrl,
 function setBusy(value) {
   busy = value;
   $("processing").hidden = !value;
+  if (value) progress.removeAttribute("value");
   input.disabled = value;
   $("sample").disabled = value;
   $("clear").disabled = value;
@@ -42,7 +46,7 @@ function reset() {
   $("status").textContent = "";
 }
 
-async function decode(file) {
+async function decode(file, signal) {
   // Decoding through a 16 kHz offline context resamples for Whisper without
   // opening an audio output stream. Mix the channels into one PCM buffer.
   const duration = await new Promise((resolve, reject) => {
@@ -58,6 +62,7 @@ async function decode(file) {
       clearTimeout(timer);
       player.removeEventListener("loadedmetadata", ready);
       player.removeEventListener("error", invalid);
+      signal.removeEventListener("abort", cancelled);
       callback(value);
     };
     const ready = () => finish(resolve, player.duration);
@@ -68,20 +73,23 @@ async function decode(file) {
           "This audio format couldn’t be opened in your browser. Try a WAV or MP3.",
         ),
       );
+    const cancelled = () => finish(reject, signal.reason);
+    signal.addEventListener("abort", cancelled, { once: true });
     player.addEventListener("loadedmetadata", ready);
     player.addEventListener("error", invalid);
     player.src = recordingUrl;
   });
   if (Number.isFinite(duration) && (duration < 1 || duration > MAX_SECONDS))
-    throw new Error("Choose a recording between 1 second and 2 minutes.");
+    throw new Error(LENGTH_ERROR);
+  const bytes = await file.arrayBuffer();
+  signal.throwIfAborted();
   const context = new OfflineAudioContext(1, 1, 16000);
-  const audio = await context
-    .decodeAudioData(await file.arrayBuffer())
-    .catch(() => {
-      throw new Error("Couldn’t decode this recording. Try a WAV or MP3.");
-    });
+  const audio = await context.decodeAudioData(bytes).catch(() => {
+    throw new Error("Couldn’t decode this recording. Try a WAV or MP3.");
+  });
+  signal.throwIfAborted();
   if (audio.duration < 1 || audio.duration > MAX_SECONDS)
-    throw new Error("Choose a recording between 1 second and 2 minutes.");
+    throw new Error(LENGTH_ERROR);
   const samples = new Float32Array(audio.length);
   for (let c = 0; c < audio.numberOfChannels; c++) {
     const channel = audio.getChannelData(c);
@@ -91,37 +99,65 @@ async function decode(file) {
   return { samples, duration: audio.duration };
 }
 
-function infer(samples) {
+function infer(samples, signal) {
   worker ??= new Worker(new URL("./speech.worker.js", import.meta.url), {
     type: "module",
   });
+  const currentWorker = worker;
   return new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => {
-      worker.terminate();
-      worker = undefined;
-      reject(
-        new Error(
-          "Transcription took too long. Try a shorter clip or another browser.",
-        ),
-      );
-    }, 240000);
-    worker.onmessage = ({ data }) => {
-      if (data.phase) return status(data.phase);
+    let timeout;
+    const settle = (error, result) => {
       clearTimeout(timeout);
-      if (data.error) reject(new Error(data.error));
-      else resolve(data.result);
+      signal.removeEventListener("abort", cancelled);
+      currentWorker.onmessage = null;
+      currentWorker.onerror = null;
+      currentWorker.onmessageerror = null;
+      if (error) {
+        currentWorker.terminate();
+        worker = undefined;
+        reject(error);
+      } else resolve(result);
     };
-    worker.onerror = () => {
+    const cancelled = () => settle(signal.reason);
+    const watchActivity = () => {
       clearTimeout(timeout);
-      worker.terminate();
-      worker = undefined;
-      reject(
+      timeout = setTimeout(() => {
+        settle(
+          new Error(
+            "Transcription stopped making progress. Try a shorter recording or another browser.",
+          ),
+        );
+      }, 240000);
+    };
+    signal.addEventListener("abort", cancelled, { once: true });
+    watchActivity();
+    currentWorker.onmessage = ({ data }) => {
+      watchActivity();
+      if (data.phase) status(data.phase);
+      if (data.total) {
+        progress.max = data.total;
+        progress.value = data.completed;
+        $("progress-note").textContent =
+          `${data.completed} of ${data.total} sections processed`;
+      }
+      if (data.error) settle(new Error(data.error));
+      else if (data.result) settle(null, data.result);
+    };
+    currentWorker.onerror = () =>
+      settle(
         new Error(
           "Couldn’t start the speech model. Try an up-to-date browser.",
         ),
       );
-    };
-    worker.postMessage({ samples }, [samples.buffer]);
+    currentWorker.onmessageerror = () =>
+      settle(
+        new Error("Couldn’t read the speech model’s response. Please retry."),
+      );
+    try {
+      currentWorker.postMessage({ samples }, [samples.buffer]);
+    } catch (error) {
+      settle(error);
+    }
   });
 }
 
@@ -158,21 +194,26 @@ async function transcribe(loadFile) {
   )
     return;
   reset();
+  const job = new AbortController();
+  const { signal } = job;
+  activeJob = job;
   setBusy(true);
+  $("progress-note").textContent = "";
   $("empty-editor").hidden = true;
   status("Reading the recording…");
   try {
-    const file = await loadFile();
+    const file = await loadFile(signal);
+    signal.throwIfAborted();
     if (!file.size || file.size > MAX_BYTES)
-      throw new Error("Choose a non-empty recording smaller than 20 MB.");
+      throw new Error("Choose a non-empty recording up to 50 MB.");
     recordingUrl = URL.createObjectURL(file);
     $("filename").textContent = file.name;
     $("recording-meta").textContent = "English recording";
     $("recording").hidden = false;
-    const { samples, duration } = await decode(file);
+    const { samples, duration } = await decode(file, signal);
     $("recording-meta").textContent =
-      `${Math.round(duration)} seconds · English`;
-    segments = readSegments(await infer(samples), duration);
+      `${Math.floor(duration / 60)}:${String(Math.floor(duration % 60)).padStart(2, "0")} · English`;
+    segments = readSegments(await infer(samples, signal), duration);
     if (!segments.length)
       throw new Error(
         "No speech was recognized. Try a clearer English recording.",
@@ -180,11 +221,19 @@ async function transcribe(loadFile) {
     render();
     status("Transcript ready to review.");
   } catch (error) {
+    if (signal.aborted) {
+      reset();
+      status("Transcription stopped. Your file is ready to try again.");
+      return;
+    }
     $("job-error").textContent =
       error.message || "Unable to transcribe this recording.";
     $("job-error").hidden = false;
   } finally {
+    activeJob = undefined;
     setBusy(false);
+    if (signal.aborted)
+      (input.files.length ? $("transcribe") : $("sample")).focus();
   }
 }
 
@@ -217,8 +266,8 @@ $("recording-form").addEventListener("submit", (event) => {
 $("sample").addEventListener(
   "click",
   () =>
-    void transcribe(async () => {
-      const response = await fetch("/sample.wav");
+    void transcribe(async (signal) => {
+      const response = await fetch("/sample.wav", { signal });
       if (!response.ok)
         throw new Error(
           "The sample could not load. Try again or choose a recording.",
@@ -228,6 +277,7 @@ $("sample").addEventListener(
       });
     }),
 );
+$("cancel").addEventListener("click", () => activeJob?.abort());
 $("clear").addEventListener("click", () => {
   if (edited && !confirm("Clear the recording and your transcript edits?"))
     return;

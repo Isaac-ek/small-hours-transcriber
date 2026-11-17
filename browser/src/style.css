@@ -620,3 +620,21 @@ h1 {
 #job-error {
   margin: 1rem 0;
 }
+
+.processing > div {
+  min-width: 0;
+  flex: 1;
+}
+#progress {
+  width: min(100%, 25rem);
+  height: 0.65rem;
+  display: block;
+  accent-color: var(--green);
+  margin-top: 0.75rem;
+}
+#progress-note:empty {
+  display: none;
+}
+#cancel {
+  margin-top: 0.65rem;
+}

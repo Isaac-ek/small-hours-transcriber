@@ -29,7 +29,7 @@
               Turn a voice note or short conversation into text you can edit and
               take with you.
             </p>
-            <span>English · Up to 2 minutes · No account</span>
+            <span>English · Up to 10 minutes · No account</span>
           </div>
         </section>
         <section class="workspace" aria-label="Transcription workspace">
@@ -39,7 +39,7 @@
               <label for="audio-file" class="drop-zone">
                 <span class="upload-icon" aria-hidden="true">↑</span>
                 <strong>Choose a recording</strong>
-                <small>WAV, MP3, M4A, MP4, WebM, OGG or FLAC · 20 MB max</small>
+                <small>WAV, MP3, M4A, MP4, WebM, OGG or FLAC · 50 MB max</small>
               </label>
               <input
                 id="audio-file"
@@ -94,7 +94,16 @@
               <span class="spinner" aria-hidden="true"></span>
               <div>
                 <strong id="phase"></strong>
-                <p>Keep this tab open while your device works.</p>
+                <p>Keep this tab open. Longer recordings take more time.</p>
+                <progress
+                  id="progress"
+                  max="1"
+                  aria-label="Transcription progress"
+                ></progress>
+                <p id="progress-note"></p>
+                <button id="cancel" type="button" class="quiet">
+                  Stop transcription
+                </button>
               </div>
             </div>
             <p id="status" role="status" class="sr-only"></p>

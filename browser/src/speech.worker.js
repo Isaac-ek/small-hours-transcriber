@@ -1,4 +1,4 @@
-import { env, pipeline } from "@huggingface/transformers";
+import { BaseStreamer, env, pipeline } from "@huggingface/transformers";
 
 const model = "Xenova/whisper-tiny.en";
 const revision = "79fb389fc764e7c395bd330e9531d9d32ada7049";
@@ -19,11 +19,33 @@ self.onmessage = async ({ data: { samples } }) => {
         device: "wasm",
       });
     }
-    self.postMessage({ phase: "Transcribing on your device…" });
+    const windowSeconds = 25;
+    const overlapSeconds = 4;
+    const sampleRate = 16000;
+    // One generation completes per overlapping window in the Whisper pipeline.
+    // Leave timestamp stitching and overlap handling to the same pipeline used for short files.
+    const total =
+      1 +
+      Math.ceil(
+        Math.max(0, samples.length - windowSeconds * sampleRate) /
+          ((windowSeconds - 2 * overlapSeconds) * sampleRate),
+      );
+    let completed = 0;
+    self.postMessage({
+      phase: "Transcribing on your device…",
+      completed,
+      total,
+    });
     const result = await transcribe(samples, {
       return_timestamps: true,
-      chunk_length_s: 25,
-      stride_length_s: 4,
+      chunk_length_s: windowSeconds,
+      stride_length_s: overlapSeconds,
+      streamer: new (class extends BaseStreamer {
+        put() {}
+        end() {
+          self.postMessage({ completed: ++completed, total });
+        }
+      })(),
     });
     self.postMessage({ result });
   } catch (error) {

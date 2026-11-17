@@ -6,7 +6,7 @@ Small Hours has two editions: a public browser transcriber and the local Python 
 
 Run `npm ci --prefix browser` and `npm run dev --prefix browser`, or build with `npm run build --prefix browser`. Vercel uses `browser/` as its project root and publishes the static Vite output.
 
-The browser edition runs English Whisper tiny.en through Transformers.js in a Web Worker. It downloads the pinned model from Hugging Face on first use and keeps audio and edits in the open tab. You can try the original synthetic sample or select a recording, edit timestamped segments, and download TXT/SRT without an account. It does not use the Python API or retain a recording library.
+The browser edition runs English Whisper tiny.en through Transformers.js in a Web Worker. It downloads the pinned model from Hugging Face on first use and keeps audio and edits in the open tab. You can try the original synthetic sample or select an English recording up to 10 minutes and 50 MB, edit timestamped segments, and download TXT/SRT without an account. It does not use the Python API or retain a recording library.
 
 Run the production-build browser check with `npx playwright test --config playwright.hosted.config.ts` after installing Playwright Chromium. Set `SMALL_HOURS_ORIGIN` to test a hosted deployment.
 
