@@ -1,5 +1,17 @@
 # Small Hours
 
+Small Hours has two editions: a public browser transcriber and the local Python workspace below.
+
+## Browser edition
+
+Run `npm ci --prefix browser` and `npm run dev --prefix browser`, or build with `npm run build --prefix browser`. Vercel uses `browser/` as its project root and publishes the static Vite output.
+
+The browser edition runs English Whisper tiny.en through Transformers.js in a Web Worker. It downloads the pinned model from Hugging Face on first use and keeps audio and edits in the open tab. You can try the original synthetic sample or select a recording, edit timestamped segments, and download TXT/SRT without an account. It does not use the Python API or retain a recording library.
+
+Run the production-build browser check with `npx playwright test --config playwright.hosted.config.ts` after installing Playwright Chromium. Set `SMALL_HOURS_ORIGIN` to test a hosted deployment.
+
+## Local Python edition
+
 A local English audio transcriber by Chiemelie Ekezie. Upload a short recording, follow its queue status, edit timestamped transcript segments, then download text or SRT subtitles. Audio, jobs and edits persist in SQLite on your computer. No paid API or cloud account is needed.
 
 ## Run
@@ -34,4 +46,4 @@ The API tests inject a deterministic engine to cover queue, edit, failure, retry
 
 ## Engineering notes
 
-See [architecture](docs/architecture.md) for the queue, failure/recovery and editing decisions, and [testing](docs/testing.md) for real-model verification and the pending three-person usability exercise. GitHub Actions runs API tests plus a real synthetic recording through the model and browser. No cloud resources are deployed.
+See [architecture](docs/architecture.md) for the queue, failure/recovery and editing decisions, and [testing](docs/testing.md) for real-model verification and the pending three-person usability exercise. GitHub Actions runs API tests plus a real synthetic recording through the model and browser. The local Python edition is not deployed to Vercel.

@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Turn a short English recording into editable text and subtitles. Small Hours transcribes audio in your browser."
+    />
+    <meta name="theme-color" content="#f6f4ee" />
+    <title>Small Hours — browser audio transcriber</title>
+    <link rel="icon" href="/mark.svg" type="image/svg+xml" />
+    <script type="module" src="/src/main.js"></script>
+  </head>
+  <body>
+    <div class="shell">
+      <header>
+        <a class="brand" href="/"
+          ><span class="brand-mark" aria-hidden="true">sh.</span> SMALL HOURS</a
+        >
+        <span class="local"><i></i> ON YOUR DEVICE</span>
+      </header>
+      <main>
+        <section class="intro">
+          <p class="eyebrow">A LITTLE LESS REPLAYING</p>
+          <h1>Good words.<br /><em>Worth keeping.</em></h1>
+          <div class="intro-copy">
+            <p>
+              Turn a voice note or short conversation into text you can edit and
+              take with you.
+            </p>
+            <span>English · Up to 2 minutes · No account</span>
+          </div>
+        </section>
+        <section class="workspace" aria-label="Transcription workspace">
+          <aside>
+            <form id="recording-form" class="upload">
+              <p class="section-number">01 / ADD A RECORDING</p>
+              <label for="audio-file" class="drop-zone">
+                <span class="upload-icon" aria-hidden="true">↑</span>
+                <strong>Choose a recording</strong>
+                <small>WAV, MP3, M4A, MP4, WebM, OGG or FLAC · 20 MB max</small>
+              </label>
+              <input
+                id="audio-file"
+                type="file"
+                accept="audio/*,.mp4,.webm,.m4a,.ogg,.flac"
+              />
+              <button id="transcribe" type="submit" class="primary" disabled>
+                Transcribe recording <span aria-hidden="true">↗</span>
+              </button>
+              <button id="sample" type="button" class="secondary sample-button">
+                Try an 8-second sample
+              </button>
+              <p class="hint">
+                First use downloads the speech model (about 45 MB). An internet
+                connection is needed for that download.
+              </p>
+            </form>
+            <p class="storage-note">
+              Transcription runs in this browser. Your recording and transcript
+              aren’t uploaded. Download your work before closing the tab.
+            </p>
+          </aside>
+          <section class="editor" aria-label="Transcript editor">
+            <div id="empty-editor" class="empty-editor">
+              <div class="wave" aria-hidden="true">
+                <i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+              </div>
+              <p class="eyebrow">ROOM FOR YOUR NEXT THOUGHT</p>
+              <h2>From spoken to written.</h2>
+              <p>
+                Choose a recording or try the sample.<br />Review the
+                transcript, make it yours, and take it with you.
+              </p>
+            </div>
+            <div id="recording" hidden>
+              <div class="editor-heading">
+                <div>
+                  <p class="eyebrow">02 / REVIEW &amp; REFINE</p>
+                  <h2 id="filename"></h2>
+                  <p id="recording-meta"></p>
+                </div>
+                <button id="clear" class="quiet danger">Clear recording</button>
+              </div>
+              <audio
+                id="player"
+                controls
+                preload="metadata"
+                aria-label="Recording playback"
+              ></audio>
+            </div>
+            <div id="processing" class="processing" hidden>
+              <span class="spinner" aria-hidden="true"></span>
+              <div>
+                <strong id="phase"></strong>
+                <p>Keep this tab open while your device works.</p>
+              </div>
+            </div>
+            <p id="status" role="status" class="sr-only"></p>
+            <p id="job-error" class="failure" role="alert" hidden></p>
+            <div id="completed" hidden>
+              <div class="transcript-tools">
+                <p>
+                  Edit any segment below. Downloads include your current edits.
+                </p>
+              </div>
+              <div id="segments" class="segments"></div>
+              <div class="downloads">
+                <span>TAKE IT WITH YOU</span>
+                <button class="secondary" id="download-txt">
+                  Download text ↓
+                </button>
+                <button class="secondary" id="download-srt">
+                  Download subtitles ↓
+                </button>
+              </div>
+              <p class="hint">
+                Check names, numbers and wording against the recording before
+                sharing.
+              </p>
+            </div>
+          </section>
+        </section>
+      </main>
+      <footer>
+        <span>SMALL HOURS / BROWSER EDITION</span
+        ><span
+          >Built by Chiemelie Ekezie ·
+          <a href="https://github.com/Isaac-ek/small-hours-transcriber"
+            >Source and local edition ↗</a
+          ></span
+        >
+      </footer>
+    </div>
+  </body>
+</html>
